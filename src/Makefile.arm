@@ -2,7 +2,7 @@ TARGET := dev_remote_upgrade
  
 INCLUDE:= -I ../include
  
-LIBS:= -L ../lib/arm -lmosquitto
+LIBS:= -L ../lib/arm -lmosquitto -lcurl -lm
  
 CSRCS := $(wildcard *.c)
 OBJS := $(patsubst %.c, %.o, $(CSRCS))

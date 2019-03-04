@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include "config.h"
 #include "ini_file.h"
+#include "param_init.h"
 
 int load_remote_upgrade_param(REMOTE_UPGRADE_CFG *params)	//加载配置文件
 {

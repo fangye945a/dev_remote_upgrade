@@ -1,12 +1,21 @@
-//ftp-manager.c
-
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <curl/curl.h>
-
 #include "ftp-manager.h"
+#include "param_init.h"
 
-/*****************util api******************/
+static char ftp_user_key[256]={0}; 	//FTP请求参数
+
+int ftp_option_init(char *user_key)
+{
+	strncpy(ftp_user_key, user_key, 256);
+	ftp_user_key[255] = '\0'; //添加结束符
+	return 0;
+}
+
+
+
 int get_file_size(FILE *file)
 {
 	int size = 0;
@@ -16,7 +25,6 @@ int get_file_size(FILE *file)
 	return size;
 }
 
-/******************curl api****************/
 CURL *curl_init()
 {
 	curl_global_init(CURL_GLOBAL_DEFAULT); 
@@ -66,12 +74,11 @@ CURLcode curl_perform(CURL *curl)
 	return ret;
 }
 
-/****************ftp upload & download api******************/
-FTP_STATE ftp_upload(const FTP_OPT ftp_option)
+FTP_STATE ftp_upload(unsigned char *filepath, unsigned char *url)
 {
 	FTP_STATE state;
 	CURL *curl;;
-	FILE *fp = fopen(ftp_option.file, "r");
+	FILE *fp = fopen(filepath, "r");
 	if(NULL == fp)
 	{
 		fprintf(stderr, "Open file failed at %s:%d\n", __FILE__, __LINE__);
@@ -79,7 +86,7 @@ FTP_STATE ftp_upload(const FTP_OPT ftp_option)
 	}
 
 	curl = curl_init();
-	curl_set_upload_opt(curl, ftp_option.url, ftp_option.user_key, fp);
+	curl_set_upload_opt(curl, url, ftp_user_key, fp);
 	if(CURLE_OK == curl_perform(curl))
 		state = FTP_UPLOAD_SUCCESS;
 	else
@@ -90,11 +97,12 @@ FTP_STATE ftp_upload(const FTP_OPT ftp_option)
 	return state;
 }
 
-FTP_STATE ftp_download(const FTP_OPT ftp_option)
+FTP_STATE ftp_download(unsigned char *filepath, unsigned char *url)
 {
 	FTP_STATE state;
 	CURL *curl;
-	FILE *fp = fopen(ftp_option.file, "w");
+	
+	FILE *fp = fopen(filepath, "w");
 	if(NULL == fp)
 	{
 		fprintf(stderr, "Open file failed at %s:%d\n", __FILE__, __LINE__);
@@ -102,7 +110,7 @@ FTP_STATE ftp_download(const FTP_OPT ftp_option)
 	}
 
 	curl = curl_init();
-	curl_set_download_opt(curl, ftp_option.url, ftp_option.user_key, fp);
+	curl_set_download_opt(curl, url, ftp_user_key, fp);
 	if(CURLE_OK == curl_perform(curl))
 		state = FTP_DOWNLOAD_SUCCESS;
 	else

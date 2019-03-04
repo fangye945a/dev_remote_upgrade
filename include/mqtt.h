@@ -9,6 +9,9 @@
 #ifndef __MQTT_H__
 #define __MQTT_H__
 
+#include "mosquitto.h"
+#include "param_init.h"
+
 #ifdef __cplusplus
 extern "C"{
 #endif /* __cplusplus */
@@ -76,7 +79,10 @@ struct mosq_config {
 #endif
 };
 
+extern int mqtt_params_init(REMOTE_UPGRADE_CFG *param);
 extern int pub_msg_to_topic(char *topic, char *msg, int msg_len);
+extern int StartMqttTask(void);	//开启MQTT任务
+extern int ExitMqttTask(void);	//退出MQTT任务
 
 #ifdef __cplusplus
 }

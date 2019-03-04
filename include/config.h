@@ -16,18 +16,9 @@ extern "C"{
 #define FAIL 0
 #define SUCCESS 1
 
-#define MQTT_HOST "52.82.73.175"        			//mqtt 主机地址
-#define MQTT_PORT 1883                  			//mqtt 端口号
-#define DEV_ID 	  "15A6002A10001001"    			//设备ID
-#define QOS 	  1                     			//mqtt消息质量
-#define USRNAME		" "								//mqtt连接用户名
-#define PASSWORD	" "								//mqtt连接密码
-#define WILL_TOPIC	"last_word"						//mqtt遗言主题
+
+#define WILL_TOPIC		"last_word"					//mqtt遗言主题
 #define WILL_PAYLOAD	"{\"good\":\"bye\"}"		//mqtt遗言内容
-
-
-#define FTP_USERKEY	"zlgs:zlgs@00157"				//ftp用户名及密码
-
 
 
 

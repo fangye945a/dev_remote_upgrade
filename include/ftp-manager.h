@@ -24,14 +24,13 @@ typedef struct FTP_OPT
 	extern "C" {
 #endif
 
-/*upload file to ftp server*/
-FTP_STATE ftp_upload(const FTP_OPT ftp_option);
+extern int ftp_option_init(char *user_key);
 
-/*download file from ftp server*/
-FTP_STATE ftp_download(const FTP_OPT ftp_option);
+extern FTP_STATE ftp_upload(unsigned char *filepath, unsigned char *url);
+
+extern FTP_STATE ftp_download(unsigned char *filepath, unsigned char *url);
 
 #ifdef __cplusplus
 	}
 #endif
-
 #endif
