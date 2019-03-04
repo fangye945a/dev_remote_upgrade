@@ -3,12 +3,6 @@
 #include <string.h>
 #include "mosquitto.h"
 
-#define MQTT_HOST "52.82.73.175"        //IP
-#define MQTT_PORT 1883                  //端口号
-#define DEV_ID 	  "15A6002A10001001"    //设备ID
-#define QOS 	  1                     //消息质量
-#define USRNAME		" "
-#define PASSWORD	" "
 #define WILL_TOPIC	"last_word"
 #define WILL_PAYLOAD	"{\"good\":\"bye\"}"
 
@@ -94,7 +88,7 @@ int pub_msg_topic(struct mosquitto *pub_mosq, char *topic, char *msg, int msg_le
 {
 	int mid_send = 0;
 	int qos = QOS;
-	mosquitto_publish(pub_mosq, &mid_send, topic, msg_len, msg, QOS, true);
+	mosquitto_publish(pub_mosq, &mid_send, topic, msg_len, msg, QOS, false);
 	return 0;
 }
 
@@ -171,7 +165,7 @@ int mqtt_params_init(struct mosq_config *cfg)
 	cfg->username = strdup(USRNAME);
 	cfg->password = strdup(PASSWORD);
 
-	cfg->will_retain = true; //打开遗言
+	cfg->will_retain = false; //遗言保留
 	cfg->will_topic = strdup(WILL_TOPIC);
 	cfg->will_qos = 2;
 	cfg->will_payload = strdup(WILL_PAYLOAD);
@@ -197,7 +191,7 @@ int main(int argc, char *argv)
 	
 	if(NULL != cfg.username && NULL != cfg.password )
 	{
-		if( strcmp(cfg.username," ") || strcmp(cfg.password," "))
+		if( strcmp(cfg.username," ") || strcmp(cfg.password," ")) //用户名不为空则设置用户名及密码
 		{
 			mosquitto_username_pw_set(mosq, cfg.username, cfg.password);			//设置用户名及密码
 		}
