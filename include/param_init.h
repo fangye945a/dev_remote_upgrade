@@ -13,7 +13,11 @@
 extern "C"{
 #endif /* __cplusplus */
 
-#define REMOTE_UPGRADE_INI_PATH "/usrdata/etc/remote_upgrade.ini"	//配置文件路径
+#ifndef ARM_EC20
+	#define REMOTE_UPGRADE_INI_PATH "../cfg/remote_upgrade.ini"	//配置文件路径
+#else
+	#define REMOTE_UPGRADE_INI_PATH "/usrdata/etc/remote_upgrade.ini"	//配置文件路径
+#endif
 
 #define MQTT_CFG "MQTT_CFG"
 #define _MQTT_HOST "mqtt_host"						//mqtt服务器主机名
@@ -30,7 +34,7 @@ extern "C"{
 
 #define CFG_MAX_LEN	32
 #define VER_MAX_LEN	24
-#define DEVID_MAX_LEN	16
+#define DEVID_MAX_LEN	32
 
 
 typedef struct _REMOTE_UPGRADE_CFG

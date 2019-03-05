@@ -2,7 +2,7 @@ TARGET := dev_remote_upgrade
  
 INCLUDE:= -I ../include
  
-LIBS:= -L ../lib/arm -lmosquitto -lcurl -lm
+LIBS:= -L ../lib/arm -lmosquitto -lcurl -lssl -lcrypto -lm
  
 CSRCS := $(wildcard *.c)
 OBJS := $(patsubst %.c, %.o, $(CSRCS))
@@ -11,7 +11,7 @@ $(TARGET): $(OBJS)
 	$(CC) $+ -o $@  $(LIBS)
 	cp $(TARGET) ../bin -rf
 %.o:%.c
-	$(CC) -c -g $< -o $@ $(INCLUDE)
+	arm-oe-linux-gnueabi-gcc -march=armv7-a -mfloat-abi=softfp -mfpu=neon -c -g -DARM_EC20 $< -o $@ $(INCLUDE)
  
 clean:
 	rm -rf $(OBJS) $(TARGET)

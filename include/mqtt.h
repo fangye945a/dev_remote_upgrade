@@ -16,6 +16,9 @@
 extern "C"{
 #endif /* __cplusplus */
 
+#define TOPIC_MAX_LEN 64
+#define PAYLOAD_MAX_LEN 1024
+
 struct mosq_config {
 	char *id;
 	char *id_prefix;
@@ -78,6 +81,13 @@ struct mosq_config {
 	char *socks5_password;
 #endif
 };
+
+typedef struct _MQTT_MESSAGE{
+	char topic[TOPIC_MAX_LEN];
+	char payload[PAYLOAD_MAX_LEN];
+	int payloadlen;
+	bool retain;
+}MQTT_MESSAGE;
 
 extern int mqtt_params_init(REMOTE_UPGRADE_CFG *param);
 extern int pub_msg_to_topic(char *topic, char *msg, int msg_len);

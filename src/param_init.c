@@ -7,6 +7,8 @@
 
 int load_remote_upgrade_param(REMOTE_UPGRADE_CFG *params)	//加载配置文件
 {
+	memset(params,0,sizeof(REMOTE_UPGRADE_CFG));
+	
 	void* cfg_ctx = NULL;
 	char* tmp = NULL;
 	if(init_config_file(REMOTE_UPGRADE_INI_PATH) != 0)
@@ -23,7 +25,7 @@ int load_remote_upgrade_param(REMOTE_UPGRADE_CFG *params)	//加载配置文件
 		term_config_file(REMOTE_UPGRADE_INI_PATH);
 		return FAIL;
 	}
-
+	
 	/*获取mqtt服务器主机地址*/
 	tmp = get_item_value(cfg_ctx, MQTT_CFG, _MQTT_HOST, "52.82.73.175");
 	strncpy(params->host, tmp, sizeof(params->host));
@@ -36,32 +38,38 @@ int load_remote_upgrade_param(REMOTE_UPGRADE_CFG *params)	//加载配置文件
 	/*获取mqtt服务器连接用户名*/
 	tmp = get_item_value(cfg_ctx, MQTT_CFG, _MQTT_USERNAME, "null");
 	strncpy(params->username, tmp, sizeof(params->username));
-	params->host[CFG_MAX_LEN-1] = '\0';//添加结束符
+	params->username[CFG_MAX_LEN-1] = '\0';//添加结束符
 
+	
 	/*获取mqtt服务器连接密码*/
 	tmp = get_item_value(cfg_ctx, MQTT_CFG, _MQTT_PASSWORD, "null");
 	strncpy(params->password, tmp, sizeof(params->password));
-	params->host[CFG_MAX_LEN-1] = '\0';//添加结束符
+	params->password[CFG_MAX_LEN-1] = '\0';//添加结束符
 
+	
 	/*获取mqtt服务器心跳周期*/
 	tmp = get_item_value(cfg_ctx, MQTT_CFG, _MQTT_HEARTBEAT, "60");
  	params->hearbeat = atoi(tmp);
 
+
 	/*获取ftp用户及密码*/
 	tmp = get_item_value(cfg_ctx, FTP_CFG, _FTP_USERKEY, "zlgs:zlgs@00157");
 	strncpy(params->user_key, tmp, sizeof(params->user_key));
-	params->host[CFG_MAX_LEN-1] = '\0';//添加结束符
+	params->user_key[CFG_MAX_LEN-1] = '\0';//添加结束符
+
 
 	/*获取远程升级程序版本*/
 	tmp = get_item_value(cfg_ctx, OTHER_CFG, _REMOTE_UPGRADE_VER, "v1.0");
 	strncpy(params->version , tmp, sizeof(params->version));
-	params->host[VER_MAX_LEN-1] = '\0';//添加结束符
+	params->version[VER_MAX_LEN-1] = '\0';//添加结束符
+
+	/*获取盒子ID*/
+	strcpy(params->devid, "157AD18120001101");
 
 	/*关闭配置文件*/
-	close_ini_file(cfg_ctx);
-	
+	close_ini_file(cfg_ctx);	
 	term_config_file(REMOTE_UPGRADE_INI_PATH);
-
+	
 	return SUCCESS;
 }
 

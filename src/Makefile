@@ -3,7 +3,7 @@ CC := gcc
  
 INCLUDE:= -I ../include
  
-LIBS:= -L/usr/local/ssl/lib/ -L ../lib/linux -lmosquitto -lcurl -lpthread
+LIBS:= -L ../lib/linux -lmosquitto -lcurl -lssl -lcrypto -lpthread -lm
  
 CSRCS := $(wildcard *.c)
 OBJS := $(patsubst %.c, %.o, $(CSRCS))

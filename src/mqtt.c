@@ -77,7 +77,19 @@ static void my_connect_callback(struct mosquitto *mosq, void *obj, int result, i
 
 static void my_message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message)
 {
-	main_process_msg->sendmsg(main_process_msg,0,0, (char *)&message, sizeof(struct mosquitto_message));
+	MQTT_MESSAGE msg;
+	strncpy(msg.topic, message->topic, sizeof(msg.topic));
+	msg.topic[TOPIC_MAX_LEN-1] = '\0';	//超出最大长度64将被截断
+	
+	strncpy(msg.payload, message->payload, sizeof(msg.payload));
+	msg.payload[PAYLOAD_MAX_LEN -1] = '\0';	//超出最大长度1024将被截断
+	
+	msg.payloadlen = message->payloadlen;  //消息长度
+
+	msg.retain = message->retain;  //被设置为保留的数据
+
+	//将收到的消息发送至主线程处理
+	main_process_msg->sendmsg(main_process_msg, MQTT_MSG, 0, (char *)&msg, sizeof(MQTT_MESSAGE));
 }
 
 
