@@ -14,7 +14,7 @@
 
 static struct mosquitto *mosq = NULL;
 static struct mosq_config g_mqtt_cfg;
-
+volatile unsigned char mqtt_connect_state = 0;
 static pthread_t mqtt_thread_id;
 
 extern tmsg_buffer* main_process_msg;
@@ -24,12 +24,13 @@ static int add_sub_topic(struct mosq_config *cfg, char *topic)  //添加订阅�
 	cfg->topic_count++;
 	cfg->topics = realloc(cfg->topics, cfg->topic_count*sizeof(char *));
 	cfg->topics[cfg->topic_count-1] = strdup(topic);
-	return 0;
+	return SUCCESS;
 }
 
 static void my_disconnect_callback(struct mosquitto *mosq, void *obj, int rc)
 {
 	printf("------------------ mqtt disconnect!! \n");
+	mqtt_connect_state = 0; //连接断开
 }
 
 static void my_connect_callback(struct mosquitto *mosq, void *obj, int result, int flags)
@@ -38,29 +39,30 @@ static void my_connect_callback(struct mosquitto *mosq, void *obj, int result, i
 	switch(result)
 	{
 		case 0:
-			printf("connect success\n");
+			printf("---- connect success!!\n");
+			mqtt_connect_state = 1;
 			break;
 		case 1:
-			printf("connection refused (unacceptable protocol version)\n");
+			printf("connection refused!! (unacceptable protocol version)\n");
 			break;
 		case 2:
-			printf("connection refused (identifier rejected)\n");
+			printf("connection refused!! (identifier rejected)\n");
 			break;
 		case 3:
-			printf("connection refused (broker unavailable)\n");
+			printf("connection refused!! (broker unavailable)\n");
 			break;
 		default:
-			printf("Unknow connection results(reserved for future use)\n");
+			printf("Unknow connection results!! (reserved for future use)\n");
 			break;
 	}	
-	struct mosq_config *mqtt_cfg;
-	printf("--- connect flags = %d\n",flags);
+	
 	if(NULL == obj)
 	{
 		printf("------------------ mosquitto lib error!!\n");
 		return;
 	}
 	
+	struct mosq_config *mqtt_cfg;
 	mqtt_cfg = (struct mosq_config *)obj;
 	
 	for(i=0; i<mqtt_cfg->topic_count; i++)	//订阅主题
@@ -208,16 +210,18 @@ int mqtt_params_init(REMOTE_UPGRADE_CFG *param)
 	add_sub_topic(cfg, "123456");				//订阅主题
 	add_sub_topic(cfg, "fangye");
 
-	return 0;
+	return SUCCESS;
 }
 
 int pub_msg_to_topic(char *topic, char *msg, int msg_len)  //发布消息
 {
+	if(!mqtt_connect_state)
+		return FAIL;
 	int mid_send = 0;
 	int qos = 1;
 	if(mosq != NULL)
 		mosquitto_publish(mosq, &mid_send, topic, msg_len, msg, qos, false);
-	return 0;
+	return SUCCESS;
 }
 
 int StartMqttTask(void)	//开启MQTT任务
@@ -248,7 +252,7 @@ int StartMqttTask(void)	//开启MQTT任务
 
 	mosquitto_loop_start(mosq); //创建线程处理mqtt消息
 
-	return 0;
+	return SUCCESS;
 }
 
 int ExitMqttTask(void)	//退出MQTT任务
@@ -261,6 +265,6 @@ int ExitMqttTask(void)	//退出MQTT任务
 	
 	mosquitto_lib_cleanup();
 
-	return 0;
+	return SUCCESS;
 }
 

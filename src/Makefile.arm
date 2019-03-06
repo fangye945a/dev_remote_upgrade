@@ -1,4 +1,4 @@
-TARGET := dev_remote_upgrade
+TARGET := ZBox_Housekeeper
  
 INCLUDE:= -I ../include
  

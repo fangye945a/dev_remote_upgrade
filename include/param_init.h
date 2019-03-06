@@ -15,8 +15,10 @@ extern "C"{
 
 #ifndef ARM_EC20
 	#define REMOTE_UPGRADE_INI_PATH "../cfg/remote_upgrade.ini"	//配置文件路径
+	#define SYSINFO_INI_PATH "../cfg/syscfg.ini"	//配置文件路径
 #else
-	#define REMOTE_UPGRADE_INI_PATH "/usrdata/etc/remote_upgrade.ini"	//配置文件路径
+	#define REMOTE_UPGRADE_INI_PATH "/usrdata/service/etc/remote_upgrade.ini"	//配置文件路径
+	#define SYSINFO_INI_PATH "/usrdata/service/etc/syscfg.ini"
 #endif
 
 #define MQTT_CFG "MQTT_CFG"

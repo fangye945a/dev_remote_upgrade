@@ -4,6 +4,7 @@
 #include <curl/curl.h>
 #include <sys/time.h>
 #include <pthread.h>
+#include "cJSON.h"
 #include "ftp-manager.h"
 #include "msg_process.h"
 #include "param_init.h"

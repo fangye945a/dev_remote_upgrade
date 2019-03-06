@@ -5,6 +5,11 @@
 #include "ini_file.h"
 #include "param_init.h"
 
+static int get_devid(char *devid) //获取设备ID
+{
+	
+}
+
 int load_remote_upgrade_param(REMOTE_UPGRADE_CFG *params)	//加载配置文件
 {
 	memset(params,0,sizeof(REMOTE_UPGRADE_CFG));
