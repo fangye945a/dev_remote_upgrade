@@ -5,9 +5,46 @@
 #include "ini_file.h"
 #include "param_init.h"
 
+extern REMOTE_UPGRADE_CFG g_remote_upgrade_params; //远程升级配置参数
+
+
+REMOTE_UPGRADE_CFG *get_remote_upgrade_cfg()
+{
+	return &g_remote_upgrade_params;
+}
+
+
 static int get_devid(char *devid) //获取设备ID
 {
+	if(devid == NULL)
+		return FAIL;
 	
+	void* cfg_ctx = NULL;
+	char* tmp = NULL;
+	if(init_config_file(SYSINFO_INI_PATH) != 0)
+	{
+		printf("---- init config file fail!!\n");
+		term_config_file(SYSINFO_INI_PATH);
+		return FAIL;
+	}
+	cfg_ctx = parse_ini_file(SYSINFO_INI_PATH);
+	if(cfg_ctx == NULL)
+	{
+		printf("---- parse ini file error,path:%s\n", SYSINFO_INI_PATH);
+		term_config_file(SYSINFO_INI_PATH);
+		return FAIL;
+	}
+
+	/*获取盒子ID*/
+	tmp = get_item_value(cfg_ctx, "INIT_PARAM_THEME", "dev_id", "157AD18120001101");
+	strncpy(devid, tmp, DEVID_MAX_LEN);
+	devid[DEVID_MAX_LEN-1] = '\0';//添加结束符
+
+	/*关闭配置文件*/
+	close_ini_file(cfg_ctx);	
+	term_config_file(SYSINFO_INI_PATH);
+	
+	return SUCCESS;
 }
 
 int load_remote_upgrade_param(REMOTE_UPGRADE_CFG *params)	//加载配置文件
@@ -64,12 +101,32 @@ int load_remote_upgrade_param(REMOTE_UPGRADE_CFG *params)	//加载配置文件
 
 
 	/*获取远程升级程序版本*/
-	tmp = get_item_value(cfg_ctx, OTHER_CFG, _REMOTE_UPGRADE_VER, "v1.0");
-	strncpy(params->version , tmp, sizeof(params->version));
-	params->version[VER_MAX_LEN-1] = '\0';//添加结束符
+	tmp = get_item_value(cfg_ctx, VERSION_CFG, _REMOTE_UPGRADE_VER, "2.255.1.0");
+	strncpy(params->upgrade_version , tmp, sizeof(params->upgrade_version));
+	params->upgrade_version[VER_MAX_LEN-1] = '\0';//添加结束符
+
+	/*获取服务程序版本*/
+	tmp = get_item_value(cfg_ctx, VERSION_CFG, _SERVICE_VER, "2.0.1.0");
+	strncpy(params->service_version , tmp, sizeof(params->service_version));
+	params->service_version[VER_MAX_LEN-1] = '\0';//添加结束符
+
+	/*获取MCU程序版本*/
+	tmp = get_item_value(cfg_ctx, VERSION_CFG, _MCU_VER, "2.254.1.0");
+	strncpy(params->mcu_version , tmp, sizeof(params->mcu_version));
+	params->mcu_version[VER_MAX_LEN-1] = '\0';//添加结束符
+
+	/*获取其他程序版本*/
+	tmp = get_item_value(cfg_ctx, VERSION_CFG, _OTHER_VER, "2.20.1.0");
+	strncpy(params->other_version , tmp, sizeof(params->other_version));
+	params->other_version[VER_MAX_LEN-1] = '\0';//添加结束符
+
+	/*获取设备类型*/
+	tmp = get_item_value(cfg_ctx, OTHER_CFG, _DEV_TYPE, "unknow");
+	strncpy(params->dev_type , tmp, sizeof(params->dev_type));
+	params->dev_type[DEV_TYPE_MAX_LEN-1] = '\0';//添加结束符
 
 	/*获取盒子ID*/
-	strcpy(params->devid, "157AD18120001101");
+	get_devid(params->devid);
 
 	/*关闭配置文件*/
 	close_ini_file(cfg_ctx);	

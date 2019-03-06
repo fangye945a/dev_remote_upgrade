@@ -19,6 +19,9 @@ extern "C"{
 #define TOPIC_MAX_LEN 64
 #define PAYLOAD_MAX_LEN 1024
 
+#define LOGIN_TOPIC "ZL/first_word"
+#define WILL_TOPIC "ZL/last_word"
+
 struct mosq_config {
 	char *id;
 	char *id_prefix;

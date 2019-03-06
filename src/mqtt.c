@@ -8,8 +8,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include "cJSON.h"
 #include "mqtt.h"
 #include "msg_process.h"
+#include "param_init.h"
 #include "config.h"
 
 static struct mosquitto *mosq = NULL;
@@ -68,12 +70,29 @@ static void my_connect_callback(struct mosquitto *mosq, void *obj, int result, i
 	for(i=0; i<mqtt_cfg->topic_count; i++)	//订阅主题
 	{
 		mosquitto_subscribe(mosq, NULL, mqtt_cfg->topics[i], mqtt_cfg->qos);
-		printf("------------------ sub %s\n",mqtt_cfg->topics[i]);
+		printf("sub[success]: %s\n",mqtt_cfg->topics[i]);
 	}
 
-	char *msg = "{\"hello\":\"world\"}";
-	int len = strlen(msg);
-	pub_msg_to_topic("first_word", msg, len);	//发布上线消息
+	REMOTE_UPGRADE_CFG *ptr = get_remote_upgrade_cfg();
+	cJSON *root = cJSON_CreateObject();  //创建json
+	cJSON_AddStringToObject(root, "devid", ptr->devid);
+	cJSON_AddStringToObject(root, "upgrade_version", ptr->upgrade_version);
+	cJSON_AddStringToObject(root, "servcie_version", ptr->service_version);
+	cJSON_AddStringToObject(root, "mcu_version", ptr->mcu_version);
+
+	cJSON *root1 = cJSON_CreateObject();  
+	cJSON_AddStringToObject(root1, "dev_type", ptr->dev_type);
+	if( !strcmp(ptr->dev_type,"tower_crane") )
+	{
+		cJSON_AddStringToObject(root1, "plc_version", ptr->other_version);
+	}
+	cJSON_AddItemToObject(root, "type", root1);
+
+	char *msg = cJSON_Print(root);
+	pub_msg_to_topic(LOGIN_TOPIC, msg, strlen(msg));	//发布上线消息
+
+	cJSON_Delete(root);
+	msg = NULL;
 	
 }
 
@@ -177,6 +196,8 @@ static void client_config_cleanup(struct mosq_config *cfg)
 
 int mqtt_params_init(REMOTE_UPGRADE_CFG *param)
 {
+	char will_msg[64] = {0};
+
 	memset(&g_mqtt_cfg, 0, sizeof(struct mosq_config));	//清空
 	struct mosq_config *cfg = &g_mqtt_cfg;
 	cfg->port = param->port;
@@ -203,13 +224,30 @@ int mqtt_params_init(REMOTE_UPGRADE_CFG *param)
 	cfg->will_retain = false; //遗言保留
 	cfg->will_topic = strdup(WILL_TOPIC);
 	cfg->will_qos = 2;	//遗言消息质量
-	cfg->will_payload = strdup(WILL_PAYLOAD);
-	cfg->will_payloadlen = strlen(WILL_PAYLOAD);
+	sprintf(will_msg, "{\"devid\":\"%s\"}", cfg->id);
+	cfg->will_payload = strdup(will_msg);
+	cfg->will_payloadlen = strlen(will_msg);
 
+	char tmp_topic[64]={0};
 	
-	add_sub_topic(cfg, "123456");				//订阅主题
-	add_sub_topic(cfg, "fangye");
+	sprintf(tmp_topic, "ZL/upload/%s", cfg->id);	//文件上传主题
+	add_sub_topic(cfg, tmp_topic);
 
+	sprintf(tmp_topic, "ZL/download/%s", cfg->id);	//文件下载主题
+	add_sub_topic(cfg, tmp_topic);
+
+	sprintf(tmp_topic, "ZL/setting/%s", cfg->id);	//参数设置主题
+	add_sub_topic(cfg, tmp_topic);
+
+	sprintf(tmp_topic, "ZL/upgrade/%s", cfg->id);	//升级主题
+	add_sub_topic(cfg, tmp_topic);
+
+	sprintf(tmp_topic, "ZL/app_manage/%s", cfg->id);	//上传主题
+	add_sub_topic(cfg, tmp_topic);
+
+	sprintf(tmp_topic, "ZL/get_dir_info/%s", cfg->id);	//上传主题
+	add_sub_topic(cfg, tmp_topic);
+	
 	return SUCCESS;
 }
 
@@ -220,7 +258,14 @@ int pub_msg_to_topic(char *topic, char *msg, int msg_len)  //发布消息
 	int mid_send = 0;
 	int qos = 1;
 	if(mosq != NULL)
-		mosquitto_publish(mosq, &mid_send, topic, msg_len, msg, qos, false);
+	{
+		if(MOSQ_ERR_SUCCESS == mosquitto_publish(mosq, &mid_send, topic, msg_len, msg, qos, false))
+		{
+			printf("pub[success]: %s ---> %s\n",msg, topic);
+		}else
+			printf("pub[fail]: %s ---> %s\n",msg, topic);
+			
+	}
 	return SUCCESS;
 }
 

@@ -31,21 +31,32 @@ extern "C"{
 #define FTP_CFG "FTP_CFG"
 #define _FTP_USERKEY "user_key"						//ftp服务器用户名及密码
 
-#define OTHER_CFG "OTHER_CFG"
+#define VERSION_CFG "VERSION_CFG"
 #define _REMOTE_UPGRADE_VER "remote_upgrade_version"	//升级程序版本
+#define _SERVICE_VER 		"service_version"
+#define _MCU_VER 			"mcu_version"
+#define _OTHER_VER 			"other_version"
+
+#define OTHER_CFG "OTHER_CFG"
+#define _DEV_TYPE "dev_type"
+
 
 #define CFG_MAX_LEN	32
 #define VER_MAX_LEN	24
 #define DEVID_MAX_LEN	32
-
+#define DEV_TYPE_MAX_LEN 32
 
 typedef struct _REMOTE_UPGRADE_CFG
 {
 	unsigned char host[CFG_MAX_LEN];  		//mqtt服务器主机名
-	unsigned char username[CFG_MAX_LEN];		//mqtt服务器连接用户名
-	unsigned char password[CFG_MAX_LEN];		//mqtt服务器连接密码
+	unsigned char username[CFG_MAX_LEN];	//mqtt服务器连接用户名
+	unsigned char password[CFG_MAX_LEN];	//mqtt服务器连接密码
 	unsigned char user_key[CFG_MAX_LEN]; 	//ftp验证用户及密码
-	unsigned char version[VER_MAX_LEN];    	//远程升级程序版本号
+	unsigned char upgrade_version[VER_MAX_LEN];    	//远程升级程序版本号
+	unsigned char dev_type[DEV_TYPE_MAX_LEN];		//设备类型
+	unsigned char service_version[VER_MAX_LEN];    	//服务程序版本号
+	unsigned char mcu_version[VER_MAX_LEN];    		//MCU程序版本号
+	unsigned char other_version[VER_MAX_LEN];    	//其他程序版本号（如塔机版本PLC升级）
 	unsigned char devid[DEVID_MAX_LEN];    	//设备ID
 	int	port;						//mqtt端口号
 	int	hearbeat;					//mqtt心跳周期
@@ -54,6 +65,7 @@ typedef struct _REMOTE_UPGRADE_CFG
 
 extern int load_remote_upgrade_param(REMOTE_UPGRADE_CFG *params);	//加载配置文件
 extern int set_remote_upgrade_param(char* section, char *keyname, char *value);	//设置远程升级参数
+extern REMOTE_UPGRADE_CFG *get_remote_upgrade_cfg();
 
 
 

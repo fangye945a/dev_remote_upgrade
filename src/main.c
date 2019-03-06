@@ -34,7 +34,11 @@ int main(int argc, char *argv[])
 	printf("username = %s\n",g_remote_upgrade_params.username);
 	printf("password = %s\n",g_remote_upgrade_params.password);
 	printf("user_key = %s\n",g_remote_upgrade_params.user_key);
-	printf("version = %s\n",g_remote_upgrade_params.version);
+	printf("upgrade_version = %s\n",g_remote_upgrade_params.upgrade_version);
+	printf("service_version = %s\n",g_remote_upgrade_params.service_version);
+	printf("mcu_version = %s\n",g_remote_upgrade_params.mcu_version);
+	printf("other_version = %s\n",g_remote_upgrade_params.other_version);
+	printf("dev_type = %s\n",g_remote_upgrade_params.dev_type);
 
 	ftp_option_init(g_remote_upgrade_params.user_key); 				//FTP参数初始化
 

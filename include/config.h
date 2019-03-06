@@ -16,10 +16,6 @@ extern "C"{
 #define FAIL 0
 #define SUCCESS 1
 
-
-#define WILL_TOPIC		"last_word"					//mqtt遗言主题
-#define WILL_PAYLOAD	"{\"good\":\"bye\"}"		//mqtt遗言内容
-
 enum
 {
 	MQTT_MSG,	//MQTT消息
