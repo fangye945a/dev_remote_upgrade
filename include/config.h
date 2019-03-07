@@ -19,7 +19,8 @@ extern "C"{
 enum
 {
 	MQTT_MSG,	//MQTT消息
-	FTP_RESULT	//FTP执行结果
+	FTP_RESULT,	//FTP执行结果
+	REMOTE_UPGRADE_PROC //升级处理
 };
 
 #ifdef __cplusplus

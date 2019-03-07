@@ -2,7 +2,7 @@ TARGET := ZBox_Housekeeper
  
 INCLUDE:= -I ../include
  
-LIBS:= -L ../lib/arm -lmosquitto -lcurl -lssl -lcrypto -lm
+LIBS:= -L ../lib/arm -lmosquitto -lcurl -lssl -lcrypto -lpthread -lm
  
 CSRCS := $(wildcard *.c)
 OBJS := $(patsubst %.c, %.o, $(CSRCS))

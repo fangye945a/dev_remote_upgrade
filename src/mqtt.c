@@ -13,6 +13,7 @@
 #include "msg_process.h"
 #include "param_init.h"
 #include "config.h"
+#include "ftp-manager.h"
 
 static struct mosquitto *mosq = NULL;
 static struct mosq_config g_mqtt_cfg;
@@ -72,28 +73,7 @@ static void my_connect_callback(struct mosquitto *mosq, void *obj, int result, i
 		mosquitto_subscribe(mosq, NULL, mqtt_cfg->topics[i], mqtt_cfg->qos);
 		printf("sub[success]: %s\n",mqtt_cfg->topics[i]);
 	}
-
-	REMOTE_UPGRADE_CFG *ptr = get_remote_upgrade_cfg();
-	cJSON *root = cJSON_CreateObject();  //创建json
-	cJSON_AddStringToObject(root, "devid", ptr->devid);
-	cJSON_AddStringToObject(root, "upgrade_version", ptr->upgrade_version);
-	cJSON_AddStringToObject(root, "servcie_version", ptr->service_version);
-	cJSON_AddStringToObject(root, "mcu_version", ptr->mcu_version);
-
-	cJSON *root1 = cJSON_CreateObject();  
-	cJSON_AddStringToObject(root1, "dev_type", ptr->dev_type);
-	if( !strcmp(ptr->dev_type,"tower_crane") )
-	{
-		cJSON_AddStringToObject(root1, "plc_version", ptr->other_version);
-	}
-	cJSON_AddItemToObject(root, "type", root1);
-
-	char *msg = cJSON_Print(root);
-	pub_msg_to_topic(LOGIN_TOPIC, msg, strlen(msg));	//发布上线消息
-
-	cJSON_Delete(root);
-	msg = NULL;
-	
+	pub_login_msg(); //发布上线消息
 }
 
 static void my_message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message)
@@ -196,7 +176,7 @@ static void client_config_cleanup(struct mosq_config *cfg)
 
 int mqtt_params_init(REMOTE_UPGRADE_CFG *param)
 {
-	char will_msg[64] = {0};
+	char will_msg[PAYLOAD_MAX_LEN] = {0};
 
 	memset(&g_mqtt_cfg, 0, sizeof(struct mosq_config));	//清空
 	struct mosq_config *cfg = &g_mqtt_cfg;
@@ -228,7 +208,10 @@ int mqtt_params_init(REMOTE_UPGRADE_CFG *param)
 	cfg->will_payload = strdup(will_msg);
 	cfg->will_payloadlen = strlen(will_msg);
 
-	char tmp_topic[64]={0};
+	char tmp_topic[TOPIC_MAX_LEN]={0};
+	
+	sprintf(tmp_topic, "ZL/online_ask/%s", cfg->id);	//文件上传主题
+	add_sub_topic(cfg, tmp_topic);
 	
 	sprintf(tmp_topic, "ZL/upload/%s", cfg->id);	//文件上传主题
 	add_sub_topic(cfg, tmp_topic);
@@ -311,5 +294,96 @@ int ExitMqttTask(void)	//退出MQTT任务
 	mosquitto_lib_cleanup();
 
 	return SUCCESS;
+}
+
+
+void pub_login_msg() //发布上线消息
+{
+	REMOTE_UPGRADE_CFG *ptr = get_remote_upgrade_cfg();
+	cJSON *root = cJSON_CreateObject();  //创建json
+	cJSON_AddStringToObject(root, "devid", ptr->devid);
+	cJSON_AddStringToObject(root, "upgrade_version", ptr->upgrade_version);
+	cJSON_AddStringToObject(root, "servcie_version", ptr->service_version);
+	cJSON_AddStringToObject(root, "mcu_version", ptr->mcu_version);
+
+	cJSON *root1 = cJSON_CreateObject();  
+	cJSON_AddStringToObject(root1, "dev_type", ptr->dev_type);
+	if( !strcmp(ptr->dev_type,"tower_crane") ) 		//塔机
+	{
+		cJSON_AddStringToObject(root1, "plc_version", ptr->other_version);
+	}
+	else if(!strcmp(ptr->dev_type,"pump")) 		//泵车
+	{
+	}
+	else if(!strcmp(ptr->dev_type,"excavator"))	//挖掘机
+	{
+	}
+	else if(!strcmp(ptr->dev_type,"car_carne")) 	//汽车起重机
+	{
+	}
+	else if(!strcmp(ptr->dev_type,"rotary_drill")) //旋挖钻
+	{
+	}
+	else if(!strcmp(ptr->dev_type,"env_sanitation")) //环卫
+	{
+	}
+	cJSON_AddItemToObject(root, "type", root1);
+
+	char *msg = cJSON_PrintUnformatted(root);
+	pub_msg_to_topic(LOGIN_TOPIC, msg, strlen(msg));	//发布上线消息
+
+	cJSON_Delete(root);
+	msg = NULL;
+	
+}
+
+void pub_trans_progress(char *trans_state, unsigned int total_size, unsigned int finish_size) //发布传输进度
+{
+	FTP_OPT *ftp_opt = get_ftp_option();
+	REMOTE_UPGRADE_CFG *ptr = get_remote_upgrade_cfg();
+
+	char topic[TOPIC_MAX_LEN]={0};
+	sprintf(topic, "ZL/trans_progress/%s", ptr->devid);	//传输进度主题
+	
+	cJSON *root = cJSON_CreateObject();  //创建json
+	cJSON_AddStringToObject(root, "state", trans_state); //传输状态
+	if( !strcmp(UPLOADING_STAT,trans_state) || !strcmp(DOWNLOADING_STAT,trans_state))
+	{
+		cJSON_AddNumberToObject(root, "total_size", total_size);
+		cJSON_AddNumberToObject(root, "finish_size", finish_size);
+	}
+	cJSON_AddStringToObject(root, "url", ftp_opt->url);
+	cJSON_AddStringToObject(root, "filepath", ftp_opt->file);
+	char *msg = cJSON_PrintUnformatted(root);
+	pub_msg_to_topic(topic, msg, strlen(msg));	//发布传输进度
+	cJSON_Delete(root);
+	msg = NULL;
+}
+
+void pub_setting_reply(int flag)   //发布参数设置结果
+{
+	REMOTE_UPGRADE_CFG *ptr = get_remote_upgrade_cfg();
+	char topic[TOPIC_MAX_LEN]={0};
+	sprintf(topic, "ZL/set_reply/%s", ptr->devid); //传输进度主题
+
+	cJSON *root = cJSON_CreateObject();  //创建json
+	if(flag)
+		cJSON_AddStringToObject(root, "result", "success"); //设置结果
+	else
+		cJSON_AddStringToObject(root, "result", "fail"); //设置结果
+	char *msg = cJSON_PrintUnformatted(root);
+	pub_msg_to_topic(topic, msg, strlen(msg));	//发布传输进度
+	cJSON_Delete(root);
+	msg = NULL;	
+}
+
+void pub_run_info()   //发布运行状态
+{
+
+}
+
+void pub_dir_info(char *dirpath)       //发布目录结构信息
+{
+
 }
 

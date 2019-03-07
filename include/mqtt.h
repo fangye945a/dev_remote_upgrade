@@ -17,10 +17,19 @@ extern "C"{
 #endif /* __cplusplus */
 
 #define TOPIC_MAX_LEN 64
-#define PAYLOAD_MAX_LEN 1024
+#define PAYLOAD_MAX_LEN 2048
 
 #define LOGIN_TOPIC "ZL/first_word"
 #define WILL_TOPIC "ZL/last_word"
+
+
+#define UPLOADING_STAT "uploading"
+#define DOWNLOADING_STAT "downloading"
+#define UPLOAD_FAIL_STAT "up_fail"
+#define DOWNLOAD_FAIL_STAT "down_fail"
+#define UPLOAD_SUCC_STAT "up_success"
+#define DOWNLOAD_SUCC_STAT "down_success"
+
 
 struct mosq_config {
 	char *id;
@@ -92,10 +101,13 @@ typedef struct _MQTT_MESSAGE{
 	bool retain;
 }MQTT_MESSAGE;
 
-extern int mqtt_params_init(REMOTE_UPGRADE_CFG *param);
-extern int pub_msg_to_topic(char *topic, char *msg, int msg_len);
+extern void pub_login_msg(); //发布上线消息
+extern int mqtt_params_init(REMOTE_UPGRADE_CFG *param);	//初始化mqtt参数
+extern int pub_msg_to_topic(char *topic, char *msg, int msg_len); //发布消息
 extern int StartMqttTask(void);	//开启MQTT任务
 extern int ExitMqttTask(void);	//退出MQTT任务
+extern void pub_trans_progress(char *trans_state, unsigned int total_size, unsigned int finish_size); //发布传输进度
+extern void pub_setting_reply(int flag);			//发布设置结果
 
 #ifdef __cplusplus
 }

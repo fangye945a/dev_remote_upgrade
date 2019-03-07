@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
+#include <signal.h>
+#include <unistd.h>
 
 #include "config.h"
 #include "cJSON.h"
@@ -10,14 +12,36 @@
 #include "param_init.h"
 #include "msg_process.h"
 #include "mqtt_msg_proc.h"
+#include "upgrade_proc.h"
 
 REMOTE_UPGRADE_CFG g_remote_upgrade_params; //远程升级配置参数
 tmsg_buffer* main_process_msg = NULL;
+
+volatile unsigned char main_running_flag = 1;
+
+
+static void main_exit_proc(int signal)
+{
+	switch(signal)
+	{
+		case SIGINT:
+			if(main_process_msg != NULL)
+			{
+				main_running_flag = 0;
+			}
+			break;
+		default:
+			break;
+	}
+}
 
 int main(int argc, char *argv[])
 {
 	int ret = -1;
 	tmsg_element* event = NULL;
+	
+	/*接收用户中断信息号,退出程序*/
+	signal(SIGINT, main_exit_proc);
 	
 	main_process_msg = msg_buffer_init();	//消息队列初始化
 	if(main_process_msg == NULL)
@@ -46,7 +70,7 @@ int main(int argc, char *argv[])
 
 	StartMqttTask(); //开启MQTT任务
 
-	while (1)
+	while (main_running_flag)
     {
 		event = main_process_msg->get_timeout(main_process_msg,500);
 		if(event != NULL)
@@ -56,34 +80,73 @@ int main(int argc, char *argv[])
 				case MQTT_MSG:
 				{
 					MQTT_MESSAGE *message = (MQTT_MESSAGE *)event->dt;
-					ret = mqtt_msg_proc(message->topic, (char *)message->payload, message->payloadlen);
+					mqtt_msg_proc(message->topic, (char *)message->payload, message->payloadlen);
 				}break;
 				case FTP_RESULT:
 				{
 					ftp_pthread_id_clean();
-					if(event->ext == FTP_BUZY)
-						printf("----------- FTP_BUZY!!\n");
-					else if(event->ext == FTP_UPLOAD_SUCCESS)
-						printf("----------- FTP_UPLOAD_SUCCESS!!\n");
-					else if(event->ext == FTP_UPLOAD_FAIL_NOT_EXIST)
-						printf("----------- FTP_UPLOAD_FAIL_NOT_EXIST!!\n");
-					else if(event->ext == FTP_UPLOAD_FAILED)
-						printf("----------- FTP_UPLOAD_FAILED!!\n");
-					else if(event->ext == FTP_DOWNLOAD_PATH_ERROR)
-						printf("----------- FTP_DOWNLOAD_PATH_ERROR!!\n");
-					else if(event->ext == FTP_DOWNLOAD_SUCCESS)
-						printf("----------- FTP_DOWNLOAD_SUCCESS!!\n");
-					else if(event->ext == FTP_DOWNLOAD_FAILED)
-						printf("----------- FTP_DOWNLOAD_FAILED!!\n");
+					switch(event->ext)
+					{							
+						case FTP_UPLOAD_FAIL_NOT_EXIST:
+						case FTP_UPLOAD_FAILED:
+							printf("--------- upload fail!\n");
+							pub_trans_progress(UPLOAD_FAIL_STAT, 0, 0); //上报结果
+							break;
+						case FTP_UPLOAD_SUCCESS:
+							pub_trans_progress(UPLOAD_SUCC_STAT, 0, 0);
+							printf("--------- upload success!\n");
+							break;
+						case FTP_DOWNLOAD_PATH_ERROR:
+						case FTP_DOWNLOAD_FAILED:
+							pub_trans_progress(DOWNLOAD_FAIL_STAT, 0, 0);
+							printf("--------- download fail!\n");
+							break;
+						case FTP_DOWNLOAD_SUCCESS:
+							pub_trans_progress(DOWNLOAD_SUCC_STAT, 0, 0);
+							printf("--------- download success!\n");
+							break;
+						case FTP_BUZY:
+							printf("--------- ftp pthread busy!!\n");
+						default:break;
+					}
+				}break;
+				case REMOTE_UPGRADE_PROC:
+				{
+					switch(event->ext)
+					{
+						case SERVICE_UPDATE:
+						{
+							ret = upgrade_service_part(); //升级服务程序区域
+						}break;
+						case APP_UPDATE:
+						{
+							ret = upgrade_apps_part();   //升级应用程序区域
+						}break;
+						case MCU_UPDATE:
+						{
+							ret = upgrade_mcu_exe();     //升级单片机
+						}break;
+						case PLC_UPDATE:
+						{
+							ret = upgrade_plc_exe();     //升级PLC
+						}break;
+						default:break;
+					}
 				}break;
 			}
 			free_tmsg_element(event);
-			if(ret == -1)	//如果返回-1则退出进程
+			
+			if(ret == SUCCESS)		//如果升级成功则退出线程
+			{
+				system("sync"); //将系统缓存数据同步到磁盘
 				break;
+			}
 		}
 		
     }
 	ExitMqttTask();	//退出MQTT任务
 	
+	if(main_running_flag)  //如果不是用户退出则重启
+		system("reboot");
 	return 0;
 }

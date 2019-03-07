@@ -6,17 +6,18 @@
 #define USER_KEY_MAX_LEN	256
 #define FTP_URL_MAX_LEN		1024
 #define FTP_PATH_MAX_LEN	1024
-
+#define TRANS_PROGRESS_T   500  //传输进度上传周期
 /*FTP OPERATION CODE*/
-typedef enum FTP_STATE
+
+typedef enum _FTP_STATE
 {
+	FTP_BUZY,	//任务繁忙 
 	FTP_UPLOAD_SUCCESS,
 	FTP_UPLOAD_FAIL_NOT_EXIST, //上传的文件不存在
 	FTP_UPLOAD_FAILED,
 	FTP_DOWNLOAD_PATH_ERROR,	//路径不存在
 	FTP_DOWNLOAD_SUCCESS,
-	FTP_DOWNLOAD_FAILED, 
-	FTP_BUZY	//任务繁忙 
+	FTP_DOWNLOAD_FAILED 
 }FTP_STATE;
 
 /*FTP OPERATIONS OPTIONS*/
@@ -41,6 +42,7 @@ extern	void ftp_pthread_id_clean();	//回收线程清空线程ID
 
 extern unsigned long long get_now_ms_time();
 
+extern FTP_OPT *get_ftp_option();
 
 #ifdef __cplusplus
 	}

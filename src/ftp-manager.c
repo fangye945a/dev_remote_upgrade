@@ -6,6 +6,8 @@
 #include <pthread.h>
 #include "cJSON.h"
 #include "ftp-manager.h"
+#include "mqtt.h"
+#include "upgrade_proc.h"
 #include "msg_process.h"
 #include "param_init.h"
 #include "config.h"
@@ -28,43 +30,28 @@ unsigned long long get_now_ms_time()
 }
 
 
-
 int upload_progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow)
 {
-	static unsigned char finish_flag = 1;
-	if(get_now_ms_time() - ftp_exec_time > 1000)	//每秒上报一次进度
+	if(get_now_ms_time() - ftp_exec_time > TRANS_PROGRESS_T)	//每500ms上报一次进度
 	{
-		double progress = 0.0;
-		if(ulnow != 0)
-			progress = (1.0*ulnow/ultotal)*100;
-		printf("Upload Process:%.2f%%\n",progress);
-		ftp_exec_time = get_now_ms_time();
+		if(ultotal != 0)
+		{
+			pub_trans_progress(UPLOADING_STAT, ultotal, ulnow);		//发布上载进度信息
+			ftp_exec_time = get_now_ms_time();
+		}
 	}	
-
-	if(ultotal != 0 && ultotal == ulnow && finish_flag) //上传完成
-	{
-		printf("--------- Upload finish!!\n");
-		finish_flag = 0;
-	}
 	return 0;
 }
 
 int download_progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow)
 {
-	static unsigned char finish_flag = 1;
-	if(get_now_ms_time() - ftp_exec_time > 1000)	//每秒上报一次进度
+	if(get_now_ms_time() - ftp_exec_time > TRANS_PROGRESS_T)	//每500ms上报一次进度
 	{
-		double progress = 0.0;
-		if(dlnow != 0)
-			progress = (1.0*dlnow/dltotal)*100;
-		printf("Download Process:%.2f%%\n",progress);
-		ftp_exec_time = get_now_ms_time();
-	}	
-
-	if(dltotal != 0 && dltotal == dlnow && finish_flag) //下载完成
-	{
-		printf("--------- Download finish!!\n");
-		finish_flag = 0;
+		if(dltotal != 0)
+		{
+			pub_trans_progress(DOWNLOADING_STAT, dltotal, dlnow);	//发布下载进度信息
+			ftp_exec_time = get_now_ms_time();
+		}
 	}
 	return 0;
 }
@@ -90,6 +77,10 @@ int fill_ftp_option(unsigned char *filepath, unsigned char *url)
 	return SUCCESS;
 }
 
+FTP_OPT *get_ftp_option(void)	//获取ftp配置项
+{
+	return &ftp_arg;
+}
 
 int get_file_size(FILE *file)
 {
@@ -147,9 +138,7 @@ CURLcode curl_perform(CURL *curl)
 	CURLcode ret = curl_easy_perform(curl);
 	if(ret != 0)
 	{
-		fprintf(stderr, "Perform curl failed.\n");
-		curl_exit(curl);
-		exit(1);
+		fprintf(stderr, "Perform curl failed. ret = %d\n",ret);
 	}
 	return ret;
 }
@@ -166,7 +155,7 @@ void *ftp_upload_task(void *arg)
 {
 	FTP_STATE state;
 	CURL *curl;
-	FILE *fp = fopen(ftp_arg.file, "r");
+	FILE *fp = fopen(ftp_arg.file, "r+");
 	if(NULL == fp)
 	{
 		fprintf(stderr, "Open file failed at %s:%d\n", __FILE__, __LINE__);
@@ -175,14 +164,14 @@ void *ftp_upload_task(void *arg)
 	else
 	{
 		curl = curl_init();
-		curl_set_download_opt(curl, ftp_arg.url, ftp_arg.user_key, fp);
+		curl_set_upload_opt(curl, ftp_arg.url, ftp_arg.user_key, fp);
 		if(CURLE_OK == curl_perform(curl))
 			state = FTP_UPLOAD_SUCCESS;
 		else
 			state = FTP_UPLOAD_FAILED;
 	}
 	
-	main_process_msg->sendmsg(main_process_msg, 0, state, NULL, 0);
+	main_process_msg->sendmsg(main_process_msg, FTP_RESULT, state, NULL, 0);
 	curl_exit(curl);
 	
 	fclose(fp);
@@ -229,9 +218,25 @@ void *ftp_download_task(void *arg)
 	}
 	
 	main_process_msg->sendmsg(main_process_msg, FTP_RESULT, state, NULL, 0);
+	
+	if(!strcmp(ftp_arg.file,SERVICE_PAKAGE_PATH))		//文件下载完成，若是升级程序，则告知进行升级
+	{
+		main_process_msg->sendmsg(main_process_msg, REMOTE_UPGRADE_PROC, SERVICE_UPDATE, NULL, 0);
+	}
+	else if(!strcmp(ftp_arg.file,APP_PAKAGE_PATH))
+	{
+		main_process_msg->sendmsg(main_process_msg, REMOTE_UPGRADE_PROC, APP_UPDATE, NULL, 0);
+	}
+	else if(!strcmp(ftp_arg.file,MCU_EXE_PATH))
+	{
+		main_process_msg->sendmsg(main_process_msg, REMOTE_UPGRADE_PROC, MCU_UPDATE, NULL, 0);
+	}
+	else if(!strcmp(ftp_arg.file,PLC_EXE_PATH))
+	{
+		main_process_msg->sendmsg(main_process_msg, REMOTE_UPGRADE_PROC, PLC_UPDATE, NULL, 0);
+	}
 
 	curl_exit(curl);
-	
 	fclose(fp);
 	return NULL;
 }
