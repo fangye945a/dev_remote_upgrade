@@ -173,8 +173,9 @@ void *ftp_upload_task(void *arg)
 	
 	main_process_msg->sendmsg(main_process_msg, FTP_RESULT, state, NULL, 0);
 	curl_exit(curl);
-	
-	fclose(fp);
+
+	if(fp)
+		fclose(fp);
 	return NULL;
 }
 
@@ -237,7 +238,8 @@ void *ftp_download_task(void *arg)
 	}
 
 	curl_exit(curl);
-	fclose(fp);
+	if(fp)
+		fclose(fp);
 	return NULL;
 }
 
