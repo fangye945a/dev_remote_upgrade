@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <dirent.h>
+#include <sys/stat.h>
 #include <pthread.h>
 #include "cJSON.h"
 #include "mqtt.h"
@@ -21,6 +23,11 @@ volatile unsigned char mqtt_connect_state = 0;
 static pthread_t mqtt_thread_id;
 
 extern tmsg_buffer* main_process_msg;
+
+int read_dir(char *path)
+{
+	
+}
 
 static int add_sub_topic(struct mosq_config *cfg, char *topic)  //添加订阅主题
 {
@@ -384,6 +391,93 @@ void pub_run_info()   //发布运行状态
 
 void pub_dir_info(char *dirpath)       //发布目录结构信息
 {
+	cJSON *dirs = NULL;
+	cJSON *files = NULL;
+	cJSON *root = cJSON_CreateObject();  //创建json
 
+	REMOTE_UPGRADE_CFG *ptr = get_remote_upgrade_cfg();
+	char topic[TOPIC_MAX_LEN]={0};
+	sprintf(topic, "ZL/dir_info/%s", ptr->devid); //传输进度主题
+	int ret = FAIL;
+	
+	if(dirpath != NULL)
+	{
+		DIR *dp = NULL;
+		struct dirent *st = NULL;
+		struct stat sta;
+		char tmp_name[1024]={0};
+		dp = opendir(dirpath);
+		if(dp != NULL)
+		{
+			while(1)
+			{
+				st = readdir(dp);
+				if(NULL == st) //读取完毕
+				{
+					break;
+				}
+				strcpy(tmp_name, dirpath);
+				if(tmp_name[strlen(tmp_name)-1] != '/') //判断路径名是否带/
+					strcat(tmp_name,"/");
+				strcat(tmp_name,st->d_name);  //新文件路径名
+				ret = stat(tmp_name, &sta); //查看目录下文件属性
+				if(ret >= 0)
+				{
+					if(S_ISDIR(sta.st_mode)) //如果为目录文件
+					{
+						if( 0 == strcmp("..",st->d_name) || 0 == strcmp(".",st->d_name)) //忽略当前目录和上一层目录
+							continue;
+						else
+						{
+							if(NULL == dirs)
+							{
+								dirs = cJSON_CreateArray(); //目录数组
+							}
+							cJSON *dir_name = cJSON_CreateString(st->d_name);
+							cJSON_AddItemToArray(dirs, dir_name);
+						}
+					}
+					else	//不为目录则打印文件路径名
+					{
+						if(NULL == files)
+						{
+							files = cJSON_CreateArray(); //文件数组
+						}
+						cJSON *file_name = cJSON_CreateString(st->d_name);
+						cJSON_AddItemToArray(files, file_name);
+					}
+				}
+				else
+				{
+					printf("--- read dir[%s] stat fail!!\n",st->d_name);
+				}
+			}
+			closedir(dp);
+		}
+	}
+	
+	if(root != NULL && files != NULL )
+	{
+		cJSON_AddItemToObject(root, "files", files);
+	}
+	if(root != NULL && dirs != NULL)
+	{
+		cJSON_AddItemToObject(root, "dirs", dirs);
+	}
+
+	if(root != NULL)
+	{
+		if( files != NULL || dirs != NULL )
+			cJSON_AddStringToObject(root, "result", "success"); //设置查询结果
+		else
+			cJSON_AddStringToObject(root, "result", "fail"); //设置查询结果
+		
+		char *msg = cJSON_Print(root);
+		printf("msg = %s\n",msg);
+		pub_msg_to_topic(topic, msg, strlen(msg));	//发布目录结构
+		cJSON_Delete(root);
+		msg = NULL;
+	}
+	return;
 }
 

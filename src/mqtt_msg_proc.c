@@ -102,7 +102,19 @@ int get_run_info_proc(char *payload)  			//获取运行信息处理
 
 int get_dir_info_proc(char *payload)	  		//获取目录信息处理
 {
-	return FAIL;
+	cJSON *root = cJSON_Parse(payload);
+	if(root == NULL)
+		return FAIL;
+	
+	cJSON *dirpath = cJSON_GetObjectItem(root, "dirname");
+	if(dirpath == NULL)
+	{
+		cJSON_Delete(root);
+		return FAIL;
+	}
+	pub_dir_info(dirpath->valuestring);  //发布目录结构
+	cJSON_Delete(root);
+	return SUCCESS;
 }
 
 
@@ -115,7 +127,11 @@ int mqtt_msg_proc(char *topic, char *payload, int payloadlen)
 	int ret = FAIL;
 	if(strstr(topic,"online_ask"))
 	{
-		pub_login_msg(); 		//在线查询 发布上线信息
+		if( !strcmp("{\"ask\":\"login_info\"}", payload) )
+		{
+			pub_login_msg(); 		//在线查询 发布上线信息
+			ret = SUCCESS;
+		}
 	}
 	else if(strstr(topic,"upload"))
 	{
