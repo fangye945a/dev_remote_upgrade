@@ -13,6 +13,7 @@
 #include "msg_process.h"
 #include "mqtt_msg_proc.h"
 #include "upgrade_proc.h"
+#include "update_daemon.h"
 
 REMOTE_UPGRADE_CFG g_remote_upgrade_params; //远程升级配置参数
 tmsg_buffer* main_process_msg = NULL;
@@ -49,6 +50,15 @@ int main(int argc, char *argv[])
 		printf("main msg queue init fail!\n");
 		return FAIL;
 	}
+	
+#ifdef ARM_EC20
+	ret = InitPlatform();		//资源初始化
+	if (-1 == ret) 
+	{
+		printf("Init platform failed!\n");
+		return FAIL;
+	}
+#endif
 
 	load_remote_upgrade_param(&g_remote_upgrade_params); 	//加载远程升级参数
 	printf("devid = %s\n",g_remote_upgrade_params.devid);
@@ -157,6 +167,10 @@ int main(int argc, char *argv[])
     }
 	ExitMqttTask();	//退出MQTT任务
 	
+#ifdef ARM_EC20	
+	UnInitPlatform(); //释放初始化资源
+#endif
+
 	if(main_running_flag)  //如果不是用户退出则重启
 		system("reboot");
 	return 0;

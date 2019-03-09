@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <sys/stat.h>
-
+#include "update_daemon.h"
 #include "upgrade_proc.h"
 #include "config.h"
 
@@ -202,14 +202,21 @@ int upgrade_apps_part()				//升级apps程序区域
 
 int upgrade_mcu_exe()				//升级MCU程序区域
 {
-	return FAIL;
+	
+	return SUCCESS;
 }
 
 int upgrade_plc_exe()				//升级其他程序
 {
 #ifdef ARM_EC20
-
-#endif
+	int ret = start_plc_update_service(PLC_EXE_PATH);
+	if(ret < 0)
+	{
+		printf("start plc update service failed!!\n");
+		return FAIL;
+	}
+#else
 	printf("------------- upgrade_plc_exe!\n");
+#endif
 	return SUCCESS;
 }
