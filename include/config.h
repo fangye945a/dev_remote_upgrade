@@ -20,7 +20,8 @@ enum
 {
 	MQTT_MSG,	//MQTT消息
 	FTP_RESULT,	//FTP执行结果
-	REMOTE_UPGRADE_PROC //升级处理
+	REMOTE_UPGRADE_PROC, //升级处理
+	SYS_REBOOT			//系统重启
 };
 
 #ifdef __cplusplus

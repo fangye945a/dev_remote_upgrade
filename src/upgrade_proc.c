@@ -11,9 +11,12 @@
 //#include "msg_process.h"
 //extern tmsg_buffer* main_process_msg;
 
-APPS_INFO  apps_info;
+APPS_INFO g_apps_info;
 
-
+APPS_INFO *get_apps_info() //获取app信息
+{
+	return &g_apps_info;
+}
 static int check_exist_apps() //检查存在的app
 {
 	DIR *dp = NULL;
@@ -44,11 +47,11 @@ static int check_exist_apps() //检查存在的app
 						continue;
 					else
 					{
-						if(apps_info.exist_apps_num < MAX_APP_NUM)
+						if(g_apps_info.exist_apps_num < MAX_APP_NUM)
 						{
-							strncpy(apps_info.exist_apps_name[apps_info.exist_apps_num],tmp_name,APP_NAME_MAX_LEN);
-							apps_info.exist_apps_name[apps_info.exist_apps_num][APP_NAME_MAX_LEN-1]='\0';
-							apps_info.exist_apps_num++;
+							strncpy(g_apps_info.exist_apps_name[g_apps_info.exist_apps_num],st->d_name,APP_NAME_MAX_LEN);
+							g_apps_info.exist_apps_name[g_apps_info.exist_apps_num][APP_NAME_MAX_LEN-1]='\0';
+							g_apps_info.exist_apps_num++;
 						}
 					}
 				}
@@ -85,11 +88,11 @@ static int check_run_apps() //检查运行的app
 			{
 				if(!S_ISDIR(sta.st_mode)) //如果不为目录文件
 				{
-					if(apps_info.run_apps_num < MAX_APP_NUM)
+					if(g_apps_info.run_apps_num < MAX_APP_NUM)
 					{
-						strncpy(apps_info.run_apps_name[apps_info.run_apps_num],tmp_name,APP_NAME_MAX_LEN);
-						apps_info.run_apps_name[apps_info.run_apps_num][APP_NAME_MAX_LEN-1]='\0';
-						apps_info.run_apps_num++;
+						strncpy(g_apps_info.run_apps_name[g_apps_info.run_apps_num],st->d_name,APP_NAME_MAX_LEN);
+						g_apps_info.run_apps_name[g_apps_info.run_apps_num][APP_NAME_MAX_LEN-1]='\0';
+						g_apps_info.run_apps_num++;
 					}
 				}
 			}
@@ -97,6 +100,15 @@ static int check_run_apps() //检查运行的app
 		closedir(dp);
 	}
 	return SUCCESS;
+}
+
+int app_info_check() //检查应用信息
+{	
+	memset(&g_apps_info,0,sizeof(APPS_INFO));
+
+	check_exist_apps(); //检查存在的APP
+
+	check_run_apps();  	//检查运行的APP
 }
 
 static int get_real_name(char *path, char *name,int name_size)
@@ -109,7 +121,7 @@ static int get_real_name(char *path, char *name,int name_size)
 	return SUCCESS;
 }
 
-static int creat_monit_file(char *exec_path)
+int creat_monit_file(char *exec_path) //生成启动文件
 {
 	if(exec_path == NULL)
 		return FAIL;
@@ -129,20 +141,20 @@ static int creat_monit_file(char *exec_path)
 	return SUCCESS;
 }
 
-static int remove_monit_file(char *exec_path)
-{
-	if(exec_path == NULL)
-		return FAIL;
-
-	return SUCCESS;
-}
-
-int upgrade_init()
-{	
-	check_exist_apps(); //检查存在的APP
-
-	check_run_apps();  	//检查运行的APP
-}
+//int remove_monit_file(char *exec_path) //删除启动文件
+//{
+//	if(exec_path == NULL)
+//		return FAIL;
+//	char real_name[APP_NAME_MAX_LEN]={0};
+//	char cmd[256]={0};
+//	if(FAIL == get_real_name(exec_path,real_name,APP_NAME_MAX_LEN) )
+//		return FAIL;
+//	sprintf(cmd,"rm /usrdata/service/monit.d/%s -rf",real_name);
+//	
+//	system(cmd);
+//	system("sync");
+//	return SUCCESS;
+//}
 
 int upgrade_service_part() //升级服务程序区域
 {
@@ -181,5 +193,9 @@ int upgrade_mcu_exe()				//升级MCU程序区域
 
 int upgrade_plc_exe()				//升级其他程序
 {
-	return FAIL;
+#ifdef ARM_EC20
+
+#endif
+	printf("------------- upgrade_plc_exe!\n")
+	return SUCCESS;
 }

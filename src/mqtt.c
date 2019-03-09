@@ -10,6 +10,8 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <pthread.h>
+#include <sys/vfs.h>
+
 #include "cJSON.h"
 #include "mqtt.h"
 #include "msg_process.h"
@@ -24,9 +26,30 @@ static pthread_t mqtt_thread_id;
 
 extern tmsg_buffer* main_process_msg;
 
-int read_dir(char *path)
+double get_sd_used_percent()
 {
+    unsigned double percent = 0;
+    struct statfs diskInfo;
 	
+#ifdef ARM_EC20
+    statfs("/usrdata",&diskInfo);
+#else
+	statfs("/",&diskInfo);
+#endif
+
+    unsigned long int f_blocks = diskInfo.f_blocks;
+    unsigned long int f_bavail = diskInfo.f_bavail;
+    if(f_bavail > f_blocks)
+    {
+        printf("Error: diskInfo.f_bavail > diskInfo.f_blocks!!\n");
+    }
+    else
+    {
+        double free_percent = f_bavail*100.0/f_blocks;
+        percent = 100.0 - free_percent;
+        printf("-----------Disk used percent:%lf%%\n",percent);
+    }
+    return percent;
 }
 
 static int add_sub_topic(struct mosq_config *cfg, char *topic)  //添加订阅主题
@@ -235,7 +258,10 @@ int mqtt_params_init(REMOTE_UPGRADE_CFG *param)
 	sprintf(tmp_topic, "ZL/app_manage/%s", cfg->id);	//上传主题
 	add_sub_topic(cfg, tmp_topic);
 
-	sprintf(tmp_topic, "ZL/get_dir_info/%s", cfg->id);	//上传主题
+	sprintf(tmp_topic, "ZL/get_dir_info/%s", cfg->id);	//获取目录主题
+	add_sub_topic(cfg, tmp_topic);
+
+	sprintf(tmp_topic, "ZL/get_run_info/%s", cfg->id);	//获取运行信息主题
 	add_sub_topic(cfg, tmp_topic);
 	
 	return SUCCESS;
@@ -386,7 +412,35 @@ void pub_setting_reply(int flag)   //发布参数设置结果
 
 void pub_run_info()   //发布运行状态
 {
+//	app_info_check();
+//	APPS_INFO *info = get_apps_info();
 
+//	REMOTE_UPGRADE_CFG *ptr = get_remote_upgrade_cfg();
+//	char topic[TOPIC_MAX_LEN]={0};
+//	sprintf(topic, "ZL/run_info/%s", ptr->devid); //传输进度主题
+
+//	cJSON *root = cJSON_CreateObject();  //创建json对象
+//	cJSON *service = cJSON_CreateArray();  //创建服务信息
+//	cJSON *apps = cJSON_CreateArray();   	//创建app信息
+
+//	cJSON_AddNumberToObject(root, "disk_use_percent", get_sd_used_percent()); //磁盘使用百分比
+
+//		
+//	cJSON *tmp = cJSON_CreateObject();
+//	cJSON_AddStringToObject(tmp, "name","ZBox_IOT_Service");
+//	cJSON_AddStringToObject(tmp, "state","run");
+//	cJSON_AddItemToArray(service, tmp);
+
+//	tmp = cJSON_CreateObject();
+//	cJSON_AddStringToObject(tmp, "name","ZBox_IOT_Service");
+//	cJSON_AddStringToObject(tmp, "state","run");
+//	cJSON_AddItemToArray(service, tmp);
+//	
+//	cJSON_AddStringToObject(root, "result", "fail"); //设置结果
+//	char *msg = cJSON_PrintUnformatted(root);
+//	pub_msg_to_topic(topic, msg, strlen(msg));	//发布传输进度
+//	cJSON_Delete(root);
+//	msg = NULL; 
 }
 
 void pub_dir_info(char *dirpath)       //发布目录结构信息

@@ -219,24 +219,26 @@ void *ftp_download_task(void *arg)
 	}
 	
 	main_process_msg->sendmsg(main_process_msg, FTP_RESULT, state, NULL, 0);
-	
-	if(!strcmp(ftp_arg.file,SERVICE_PAKAGE_PATH))		//文件下载完成，若是升级程序，则告知进行升级
-	{
-		main_process_msg->sendmsg(main_process_msg, REMOTE_UPGRADE_PROC, SERVICE_UPDATE, NULL, 0);
-	}
-	else if(!strcmp(ftp_arg.file,APP_PAKAGE_PATH))
-	{
-		main_process_msg->sendmsg(main_process_msg, REMOTE_UPGRADE_PROC, APP_UPDATE, NULL, 0);
-	}
-	else if(!strcmp(ftp_arg.file,MCU_EXE_PATH))
-	{
-		main_process_msg->sendmsg(main_process_msg, REMOTE_UPGRADE_PROC, MCU_UPDATE, NULL, 0);
-	}
-	else if(!strcmp(ftp_arg.file,PLC_EXE_PATH))
-	{
-		main_process_msg->sendmsg(main_process_msg, REMOTE_UPGRADE_PROC, PLC_UPDATE, NULL, 0);
-	}
 
+	if(state == FTP_DOWNLOAD_SUCCESS)
+	{
+		if(!strcmp(ftp_arg.file,SERVICE_PAKAGE_PATH))		//文件下载完成，若是升级程序，则告知进行升级
+		{
+			main_process_msg->sendmsg(main_process_msg, REMOTE_UPGRADE_PROC, SERVICE_UPDATE, NULL, 0);
+		}
+		else if(!strcmp(ftp_arg.file,APP_PAKAGE_PATH))
+		{
+			main_process_msg->sendmsg(main_process_msg, REMOTE_UPGRADE_PROC, APP_UPDATE, NULL, 0);
+		}
+		else if(!strcmp(ftp_arg.file,MCU_EXE_PATH))
+		{
+			main_process_msg->sendmsg(main_process_msg, REMOTE_UPGRADE_PROC, MCU_UPDATE, NULL, 0);
+		}
+		else if(!strcmp(ftp_arg.file,PLC_EXE_PATH))
+		{
+			main_process_msg->sendmsg(main_process_msg, REMOTE_UPGRADE_PROC, PLC_UPDATE, NULL, 0);
+		}
+	}
 	curl_exit(curl);
 	if(fp)
 		fclose(fp);

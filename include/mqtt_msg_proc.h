@@ -14,11 +14,18 @@
 extern "C"{
 #endif /* __cplusplus */
 
+typedef struct _APP_MANAGE_ADD_OPT
+{
+	int add_app_flag;
+	char add_app_name[64];
+}APP_MANAGE_ADD_OPT;
 
 
 extern int mqtt_msg_proc(char *topic, char *payload, int payloadlen);
-
-
+extern int judge_is_add_app();
+extern 	void add_app_clear();
+extern	int judge_is_add_app();	
+extern APP_MANAGE_ADD_OPT *get_add_app_st();
 
 #ifdef __cplusplus
 }

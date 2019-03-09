@@ -24,7 +24,7 @@ extern "C"{
 #define APPS_DIR "/usrdata/apps"
 
 #define MONIT_CFG_DIR "/usrdata/service/monit.d"
-#define MONIT_CFG "CHECK PROGRAM %s WITH PATH %s\r\n\tif status != 0 then alert"
+#define MONIT_CFG "CHECK PROGRAM %s WITH PATH %s\r\n\tif status != 0 then alert\r\n"
 
 typedef enum _UPGRADE_TYPE //升级类型
 {
@@ -48,6 +48,9 @@ extern int upgrade_mcu_exe();
 extern int upgrade_plc_exe();
 extern int upgrade_proc();
 extern int upgrade_service_part();
+extern int app_info_check();
+extern APPS_INFO *get_apps_info(); //获取app信息
+extern	int creat_monit_file(char *exec_path); //生成启动文件
 
 
 

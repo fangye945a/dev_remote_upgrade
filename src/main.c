@@ -121,24 +121,35 @@ int main(int argc, char *argv[])
 						case APP_UPDATE:
 						{
 							ret = upgrade_apps_part();   //升级应用程序区域
+							if(judge_is_add_app()) //如果是添加应用
+							{
+								APP_MANAGE_ADD_OPT *opt = get_add_app_st();
+								run_application(opt->add_app_name);  //添加启动脚本
+								add_app_clear();	//清楚结构体
+							}
 						}break;
 						case MCU_UPDATE:
 						{
-							ret = upgrade_mcu_exe();     //升级单片机
+							upgrade_mcu_exe();     //升级单片机
 						}break;
 						case PLC_UPDATE:
 						{
-							ret = upgrade_plc_exe();     //升级PLC
+							upgrade_plc_exe();     //升级PLC
 						}break;
 						default:break;
 					}
 				}break;
+				case SYS_REBOOT:
+				{
+					ret = SUCCESS;
+				}break;					
 			}
 			free_tmsg_element(event);
 			
 			if(ret == SUCCESS)		//如果升级成功则退出线程
 			{
 				system("sync"); //将系统缓存数据同步到磁盘
+				sleep(1);
 				break;
 			}
 		}
