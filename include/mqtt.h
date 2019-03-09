@@ -109,6 +109,7 @@ extern int ExitMqttTask(void);	//退出MQTT任务
 extern void pub_trans_progress(char *trans_state, unsigned int total_size, unsigned int finish_size); //发布传输进度
 extern void pub_setting_reply(int flag);			//发布设置结果
 extern void pub_dir_info(char *dirpath);		//发布目录结构
+extern void pub_run_info();   //发布运行状态
 
 #ifdef __cplusplus
 }

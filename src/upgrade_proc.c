@@ -17,6 +17,20 @@ APPS_INFO *get_apps_info() //获取app信息
 {
 	return &g_apps_info;
 }
+
+int is_app_running(char *app_name)
+{
+	int i=0;
+	for(i=0; i<g_apps_info.run_apps_num; i++)
+	{
+		if( !strcmp(g_apps_info.run_apps_name[i], app_name) )
+		{
+			return SUCCESS;
+		}
+	}
+	return FAIL;
+}
+
 static int check_exist_apps() //检查存在的app
 {
 	DIR *dp = NULL;
@@ -196,6 +210,6 @@ int upgrade_plc_exe()				//升级其他程序
 #ifdef ARM_EC20
 
 #endif
-	printf("------------- upgrade_plc_exe!\n")
+	printf("------------- upgrade_plc_exe!\n");
 	return SUCCESS;
 }

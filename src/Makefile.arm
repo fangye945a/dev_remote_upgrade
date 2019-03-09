@@ -14,5 +14,5 @@ $(TARGET): $(OBJS)
 	arm-oe-linux-gnueabi-gcc -march=armv7-a -mfloat-abi=softfp -mfpu=neon -c -g -DARM_EC20 $< -o $@ $(INCLUDE)
  
 clean:
-	rm -rf $(OBJS) $(TARGET)
+	rm -rf $(OBJS) $(TARGET) ../bin/$(TARGET)
 	#rm *.o

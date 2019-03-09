@@ -18,6 +18,7 @@
 #include "param_init.h"
 #include "config.h"
 #include "ftp-manager.h"
+#include "upgrade_proc.h"
 
 static struct mosquitto *mosq = NULL;
 static struct mosq_config g_mqtt_cfg;
@@ -28,7 +29,7 @@ extern tmsg_buffer* main_process_msg;
 
 double get_sd_used_percent()
 {
-    unsigned double percent = 0;
+    double percent = 0;
     struct statfs diskInfo;
 	
 #ifdef ARM_EC20
@@ -412,35 +413,44 @@ void pub_setting_reply(int flag)   //发布参数设置结果
 
 void pub_run_info()   //发布运行状态
 {
-//	app_info_check();
-//	APPS_INFO *info = get_apps_info();
+	app_info_check();
+	APPS_INFO *info = get_apps_info();
+	int i = 0;
 
-//	REMOTE_UPGRADE_CFG *ptr = get_remote_upgrade_cfg();
-//	char topic[TOPIC_MAX_LEN]={0};
-//	sprintf(topic, "ZL/run_info/%s", ptr->devid); //传输进度主题
+	REMOTE_UPGRADE_CFG *ptr = get_remote_upgrade_cfg();
+	char topic[TOPIC_MAX_LEN]={0};
+	sprintf(topic, "ZL/run_info/%s", ptr->devid); //传输进度主题
 
-//	cJSON *root = cJSON_CreateObject();  //创建json对象
-//	cJSON *service = cJSON_CreateArray();  //创建服务信息
-//	cJSON *apps = cJSON_CreateArray();   	//创建app信息
+	cJSON *root = cJSON_CreateObject();  //创建json对象
+	cJSON *service = cJSON_CreateArray();  //创建服务信息
+	cJSON *apps = cJSON_CreateArray();   	//创建app信息
 
-//	cJSON_AddNumberToObject(root, "disk_use_percent", get_sd_used_percent()); //磁盘使用百分比
+	cJSON_AddNumberToObject(root, "disk_use_percent", get_sd_used_percent()); //磁盘使用百分比
+		
+	cJSON *tmp = cJSON_CreateObject();
+	cJSON_AddStringToObject(tmp, "name","ZBox_IOT_Service");
+	cJSON_AddStringToObject(tmp, "state","run");
+	cJSON_AddItemToArray(service, tmp);
+	cJSON_AddItemToObject(root, "service", service);
 
-//		
-//	cJSON *tmp = cJSON_CreateObject();
-//	cJSON_AddStringToObject(tmp, "name","ZBox_IOT_Service");
-//	cJSON_AddStringToObject(tmp, "state","run");
-//	cJSON_AddItemToArray(service, tmp);
-
-//	tmp = cJSON_CreateObject();
-//	cJSON_AddStringToObject(tmp, "name","ZBox_IOT_Service");
-//	cJSON_AddStringToObject(tmp, "state","run");
-//	cJSON_AddItemToArray(service, tmp);
-//	
-//	cJSON_AddStringToObject(root, "result", "fail"); //设置结果
-//	char *msg = cJSON_PrintUnformatted(root);
-//	pub_msg_to_topic(topic, msg, strlen(msg));	//发布传输进度
-//	cJSON_Delete(root);
-//	msg = NULL; 
+	for(i=0; i<info->exist_apps_num; i++)
+	{
+		tmp = cJSON_CreateObject();
+		cJSON_AddStringToObject(tmp, "name", info->exist_apps_name[i]);
+		
+		if( is_app_running(info->exist_apps_name[i]) )
+			cJSON_AddStringToObject(tmp, "state","run");
+		else
+			cJSON_AddStringToObject(tmp, "state","stop");
+		
+		cJSON_AddItemToArray(apps, tmp);
+	}
+	cJSON_AddItemToObject(root, "apps", apps);
+	
+	char *msg = cJSON_PrintUnformatted(root);
+	pub_msg_to_topic(topic, msg, strlen(msg));	//发布传输进度
+	cJSON_Delete(root);
+	msg = NULL; 
 }
 
 void pub_dir_info(char *dirpath)       //发布目录结构信息

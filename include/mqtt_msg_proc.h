@@ -26,6 +26,7 @@ extern int judge_is_add_app();
 extern 	void add_app_clear();
 extern	int judge_is_add_app();	
 extern APP_MANAGE_ADD_OPT *get_add_app_st();
+extern int run_application(char *app_name);
 
 #ifdef __cplusplus
 }

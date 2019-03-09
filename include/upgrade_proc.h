@@ -49,6 +49,7 @@ extern int upgrade_plc_exe();
 extern int upgrade_proc();
 extern int upgrade_service_part();
 extern int app_info_check();
+extern int is_app_running(char *app_name);
 extern APPS_INFO *get_apps_info(); //获取app信息
 extern	int creat_monit_file(char *exec_path); //生成启动文件
 

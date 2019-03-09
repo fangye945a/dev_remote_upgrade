@@ -14,5 +14,5 @@ $(TARGET): $(OBJS)
 %.o:%.c
 	$(CC) -c -g $< -o $@ $(INCLUDE)
 clean:
-	rm -rf $(OBJS) $(TARGET)
+	rm -rf $(OBJS) $(TARGET) ../bin/$(TARGET)
 	#rm *.o
