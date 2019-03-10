@@ -32,6 +32,10 @@ APP_MANAGE_ADD_OPT *get_add_app_st()
 
 int add_application(char *app_name, char *url) //添加应用
 {
+	REMOTE_UPGRADE_CFG *ptr = get_remote_upgrade_cfg();
+	char topic[TOPIC_MAX_LEN]={0};
+	sprintf(topic, "ZL/app_manage_reply/%s", ptr->devid); //APP管理回复
+
 	app_info_check();	//检查应用
 	APPS_INFO *info = get_apps_info();
 	int i = 0;
@@ -59,12 +63,33 @@ int add_application(char *app_name, char *url) //添加应用
 		strncpy(add_app.add_app_name ,app_name, 64);
 		add_app.add_app_name[63]= '\0';
 		ftp_download(APP_PAKAGE_PATH, url);
+		
+		cJSON *root = cJSON_CreateObject();
+		cJSON_AddStringToObject(root, "result", "success");
+		cJSON_AddStringToObject(root, "msg", "add application success!");
+		char *msg = cJSON_PrintUnformatted(root);
+		pub_msg_to_topic(topic, msg, strlen(msg));	//发布目录结构
+		cJSON_Delete(root);
+		msg = NULL;
+	}
+	else
+	{
+		cJSON *root = cJSON_CreateObject();
+		cJSON_AddStringToObject(root, "result", "fail");
+		cJSON_AddStringToObject(root, "msg", "The application is exist!");
+		char *msg = cJSON_PrintUnformatted(root);
+		pub_msg_to_topic(topic, msg, strlen(msg));	//发布目录结构
+		cJSON_Delete(root);
+		msg = NULL;
 	}
 	return SUCCESS;
 }
 
 int del_application(char *app_name) //删除应用
 {
+	REMOTE_UPGRADE_CFG *ptr = get_remote_upgrade_cfg();
+	char topic[TOPIC_MAX_LEN]={0};
+	sprintf(topic, "ZL/app_manage_reply/%s", ptr->devid); //APP管理回复
 	
 	printf("---------start del application!\n");
 	app_info_check();	//检查应用
@@ -101,13 +126,34 @@ int del_application(char *app_name) //删除应用
 			main_process_msg->sendmsg(main_process_msg,SYS_REBOOT,0,NULL,0); //重启系统
 		}
 		printf("--------- del application success!\n");
+		cJSON *root = cJSON_CreateObject();
+		cJSON_AddStringToObject(root, "result", "success");
+		cJSON_AddStringToObject(root, "msg", "delete application success!");
+		char *msg = cJSON_PrintUnformatted(root);
+		pub_msg_to_topic(topic, msg, strlen(msg));	//发布目录结构
+		cJSON_Delete(root);
+		msg = NULL;
 	}
-	
+	else
+	{
+		printf("--------- The app is not exist!\n");
+		cJSON *root = cJSON_CreateObject();
+		cJSON_AddStringToObject(root, "result", "fail");
+		cJSON_AddStringToObject(root, "msg", "The app is not exist!");
+		char *msg = cJSON_PrintUnformatted(root);
+		pub_msg_to_topic(topic, msg, strlen(msg));	//发布目录结构
+		cJSON_Delete(root);
+		msg = NULL;
+	}
 	return SUCCESS;
 }
 
 int run_application(char *app_name)       //启动应用
 {
+	REMOTE_UPGRADE_CFG *ptr = get_remote_upgrade_cfg();
+	char topic[TOPIC_MAX_LEN]={0};
+	sprintf(topic, "ZL/app_manage_reply/%s", ptr->devid); //APP管理回复
+
 	app_info_check();	//检查应用
 	APPS_INFO *info = get_apps_info();
 	int i = 0;
@@ -134,14 +180,48 @@ int run_application(char *app_name)       //启动应用
 		char exec_path[256]={0}; //应用可执行文件路径
 		sprintf(exec_path,"/usrdata/apps/%s/%s",app_name,app_name);
 		creat_monit_file(exec_path); //生成启动文件
+		
+		cJSON *root = cJSON_CreateObject();
+		cJSON_AddStringToObject(root, "result", "success");
+		cJSON_AddStringToObject(root, "msg", "run app success!");
+		char *msg = cJSON_PrintUnformatted(root);
+		pub_msg_to_topic(topic, msg, strlen(msg));	//发布目录结构
+		cJSON_Delete(root);
+		msg = NULL;
+		
 		main_process_msg->sendmsg(main_process_msg,SYS_REBOOT,0,NULL,0); //重启系统
 	}
-
+	else if(run_flag == 1  && exist_flag == 1)
+	{
+		printf("--------- The app is running!\n");
+		cJSON *root = cJSON_CreateObject();
+		cJSON_AddStringToObject(root, "result", "fail");
+		cJSON_AddStringToObject(root, "msg", "The app is running!");
+		char *msg = cJSON_PrintUnformatted(root);
+		pub_msg_to_topic(topic, msg, strlen(msg));	//发布目录结构
+		cJSON_Delete(root);
+		msg = NULL;
+	}
+	else
+	{
+		printf("--------- The app is not exist!\n");
+		cJSON *root = cJSON_CreateObject();
+		cJSON_AddStringToObject(root, "result", "fail");
+		cJSON_AddStringToObject(root, "msg", "The app is not exist!");
+		char *msg = cJSON_PrintUnformatted(root);
+		pub_msg_to_topic(topic, msg, strlen(msg));	//发布目录结构
+		cJSON_Delete(root);
+		msg = NULL;
+	}
 	return SUCCESS;
 }
 
 int stop_application(char *app_name)	//停止应用
 {
+	REMOTE_UPGRADE_CFG *ptr = get_remote_upgrade_cfg();
+	char topic[TOPIC_MAX_LEN]={0};
+	sprintf(topic, "ZL/app_manage_reply/%s", ptr->devid); //APP管理回复
+
 	app_info_check();	//检查应用
 	APPS_INFO *info = get_apps_info();
 	int i = 0;
@@ -160,8 +240,30 @@ int stop_application(char *app_name)	//停止应用
 		char stop_cmd[256]={0}; //启动脚本路径
 		sprintf(stop_cmd, "rm /usrdata/service/monit.d/%s", app_name);
 		system(stop_cmd);
+
+		cJSON *root = cJSON_CreateObject();
+		cJSON_AddStringToObject(root, "result", "success");
+		cJSON_AddStringToObject(root, "msg", "delete app success!");
+		char *msg = cJSON_PrintUnformatted(root);
+		pub_msg_to_topic(topic, msg, strlen(msg));	//发布目录结构
+		cJSON_Delete(root);
+		msg = NULL;
+		
 		main_process_msg->sendmsg(main_process_msg,SYS_REBOOT,0,NULL,0); //重启系统
 	}
+	else
+	{
+		printf("--------- The app is not running!\n");
+		cJSON *root = cJSON_CreateObject();
+		cJSON_AddStringToObject(root, "result", "fail");
+		cJSON_AddStringToObject(root, "msg", "The app is not run!");
+		char *msg = cJSON_PrintUnformatted(root);
+		pub_msg_to_topic(topic, msg, strlen(msg));	//发布目录结构
+		cJSON_Delete(root);
+		msg = NULL;
+	}
+		
+	
 	return SUCCESS;
 }
 
@@ -250,6 +352,10 @@ int upgrade_proc(char *payload)  		//升级处理
 
 int app_manage_proc(char *payload)  		//APP管理处理
 {
+	REMOTE_UPGRADE_CFG *ptr = get_remote_upgrade_cfg();
+	char topic[TOPIC_MAX_LEN]={0};
+	sprintf(topic, "ZL/app_manage_reply/%s", ptr->devid); //APP管理回复
+
 	cJSON *root = cJSON_Parse(payload);
 	int ret = FAIL;
 	if(root == NULL)
@@ -262,7 +368,19 @@ int app_manage_proc(char *payload)  		//APP管理处理
 		{
 			cJSON *url = cJSON_GetObjectItem(root, "url");
 			if(url != NULL)
+			{
 				add_application(name->valuestring, url->valuestring); //添加并启动应用
+			}	
+			else
+			{
+				cJSON *reply = cJSON_CreateObject();
+				cJSON_AddStringToObject(reply, "result", "fail");
+				cJSON_AddStringToObject(reply, "msg", "Please add url in msg!");
+				char *msg = cJSON_PrintUnformatted(reply);
+				pub_msg_to_topic(topic, msg, strlen(msg));	//发布执行结果
+				cJSON_Delete(reply);
+				msg = NULL;
+			}
 		}
 		else if(!strcmp(opt->valuestring, "del"))   //del  删除应用
 		{

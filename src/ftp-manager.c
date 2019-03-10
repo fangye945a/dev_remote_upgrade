@@ -154,7 +154,7 @@ void ftp_pthread_id_clean()
 void *ftp_upload_task(void *arg)
 {
 	FTP_STATE state;
-	CURL *curl;
+	CURL *curl = NULL;
 	FILE *fp = fopen(ftp_arg.file, "r+");
 	if(NULL == fp)
 	{
@@ -172,8 +172,9 @@ void *ftp_upload_task(void *arg)
 	}
 	
 	main_process_msg->sendmsg(main_process_msg, FTP_RESULT, state, NULL, 0);
-	curl_exit(curl);
 
+	if(curl)
+		curl_exit(curl);
 	if(fp)
 		fclose(fp);
 	return NULL;
@@ -201,7 +202,7 @@ void ftp_upload(unsigned char *filepath, unsigned char *url)
 void *ftp_download_task(void *arg)
 {
 	FTP_STATE state;
-	CURL *curl;
+	CURL *curl = NULL;
 	FILE *fp = fopen(ftp_arg.file, "w+");
 	if(NULL == fp)
 	{
@@ -239,7 +240,8 @@ void *ftp_download_task(void *arg)
 			main_process_msg->sendmsg(main_process_msg, REMOTE_UPGRADE_PROC, PLC_UPDATE, NULL, 0);
 		}
 	}
-	curl_exit(curl);
+	if(curl)
+		curl_exit(curl);
 	if(fp)
 		fclose(fp);
 	return NULL;

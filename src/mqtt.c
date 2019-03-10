@@ -423,7 +423,6 @@ void pub_run_info()   //发布运行状态
 
 	cJSON *root = cJSON_CreateObject();  //创建json对象
 	cJSON *service = cJSON_CreateArray();  //创建服务信息
-	cJSON *apps = cJSON_CreateArray();   	//创建app信息
 
 	cJSON_AddNumberToObject(root, "disk_use_percent", get_sd_used_percent()); //磁盘使用百分比
 		
@@ -433,19 +432,24 @@ void pub_run_info()   //发布运行状态
 	cJSON_AddItemToArray(service, tmp);
 	cJSON_AddItemToObject(root, "service", service);
 
-	for(i=0; i<info->exist_apps_num; i++)
+
+	if(info->exist_apps_num > 0)
 	{
-		tmp = cJSON_CreateObject();
-		cJSON_AddStringToObject(tmp, "name", info->exist_apps_name[i]);
-		
-		if( is_app_running(info->exist_apps_name[i]) )
-			cJSON_AddStringToObject(tmp, "state","run");
-		else
-			cJSON_AddStringToObject(tmp, "state","stop");
-		
-		cJSON_AddItemToArray(apps, tmp);
+		cJSON *apps = cJSON_CreateArray();   	//创建app信息
+		for(i=0; i<info->exist_apps_num; i++)
+		{
+			tmp = cJSON_CreateObject();
+			cJSON_AddStringToObject(tmp, "name", info->exist_apps_name[i]);
+			
+			if( is_app_running(info->exist_apps_name[i]) )
+				cJSON_AddStringToObject(tmp, "state","run");
+			else
+				cJSON_AddStringToObject(tmp, "state","stop");
+			
+			cJSON_AddItemToArray(apps, tmp);
+		}
+		cJSON_AddItemToObject(root, "apps", apps);
 	}
-	cJSON_AddItemToObject(root, "apps", apps);
 	
 	char *msg = cJSON_PrintUnformatted(root);
 	pub_msg_to_topic(topic, msg, strlen(msg));	//发布传输进度
