@@ -20,6 +20,22 @@ tmsg_buffer* main_process_msg = NULL;
 
 volatile unsigned char main_running_flag = 1;
 
+static void auto_upgrade()  //开机30秒后若文件存在则自动升级
+{
+	static int flag = 1; //升级标志
+	static unsigned long start_time = 0; //开始计时时间
+	if(start_time == 0)
+		start_time = time(0); //记录开始计时时间
+
+	if(flag == 1)	//未开始升级
+	{
+		if(difftime(start_time, time(0)) > 30) 
+		{
+			upgrade_plc_exe();	    //开机30秒后尝试升级、若升级文件不存在则不升级
+			flag = 0; //开始升级
+		}
+	}
+}
 
 static void main_exit_proc(int signal)
 {
@@ -163,7 +179,7 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
-		
+		auto_upgrade();	//开机30秒自动检查、升级PLC
     }
 	ExitMqttTask();	//退出MQTT任务
 	

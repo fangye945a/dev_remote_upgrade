@@ -182,6 +182,9 @@ int upgrade_service_part() //升级服务程序区域
 	system(cmd); //解压升级文件
 	sleep(1);
 	system("chmod 777 /usrdata/service -R");//赋予权限
+
+	sprintf(cmd, "rm %s -rf", SERVICE_PAKAGE_PATH); //删除升级包
+	system(cmd);
 	return SUCCESS;
 }
 
@@ -197,6 +200,9 @@ int upgrade_apps_part()				//升级apps程序区域
 	system(cmd);
 	sleep(1);
 	system("chmod 777 /usrdata/apps -R");//赋予权限
+	
+	sprintf(cmd, "rm %s -rf", APP_PAKAGE_PATH); //删除升级包
+	system(cmd);
 	return SUCCESS;
 }
 

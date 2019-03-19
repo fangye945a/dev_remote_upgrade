@@ -336,36 +336,11 @@ void pub_login_msg() //发布上线消息
 	REMOTE_UPGRADE_CFG *ptr = get_remote_upgrade_cfg();
 	cJSON *root = cJSON_CreateObject();  //创建json
 	cJSON_AddStringToObject(root, "devid", ptr->devid);
-	cJSON_AddStringToObject(root, "upgrade_version", ptr->upgrade_version);
-	cJSON_AddStringToObject(root, "servcie_version", ptr->service_version);
-	cJSON_AddStringToObject(root, "mcu_version", ptr->mcu_version);
-
-	cJSON *root1 = cJSON_CreateObject();  
-	cJSON_AddStringToObject(root1, "dev_type", ptr->dev_type);
-	if( !strcmp(ptr->dev_type,"tower_crane") ) 		//塔机
-	{
-		cJSON_AddStringToObject(root1, "plc_version", ptr->other_version);
-	}
-	else if(!strcmp(ptr->dev_type,"pump")) 		//泵车
-	{
-	}
-	else if(!strcmp(ptr->dev_type,"excavator"))	//挖掘机
-	{
-	}
-	else if(!strcmp(ptr->dev_type,"car_carne")) 	//汽车起重机
-	{
-	}
-	else if(!strcmp(ptr->dev_type,"rotary_drill")) //旋挖钻
-	{
-	}
-	else if(!strcmp(ptr->dev_type,"env_sanitation")) //环卫
-	{
-	}
-	cJSON_AddItemToObject(root, "type", root1);
+	cJSON_AddStringToObject(root, "version", ZBOX_HOUSEKEEPER_VERSION);
+	cJSON_AddStringToObject(root, "dev_type", ptr->dev_type);
 
 	char *msg = cJSON_PrintUnformatted(root);
 	pub_msg_to_topic(LOGIN_TOPIC, msg, strlen(msg));	//发布上线消息
-
 	cJSON_Delete(root);
 	msg = NULL;
 	

@@ -16,6 +16,7 @@ extern "C"{
 #define FAIL 0
 #define SUCCESS 1
 
+#define ZBOX_HOUSEKEEPER_VERSION "Z21.1.1.1.1" 	//升级管理软件版本
 enum
 {
 	MQTT_MSG,	//MQTT消息

@@ -10,7 +10,7 @@ OBJS := $(patsubst %.c, %.o, $(CSRCS))
  
 $(TARGET): $(OBJS) 
 	$(CC) $+ -o $@  $(LIBS)
-	cp $(TARGET) ../bin -rf
+	cp $(TARGET) ../bin/$(TARGET) -rf
 %.o:%.c
 	$(CC) -c -g $< -o $@ $(INCLUDE)
 clean:

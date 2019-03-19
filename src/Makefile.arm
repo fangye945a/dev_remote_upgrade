@@ -11,7 +11,7 @@ OBJS := $(patsubst %.c, %.o, $(CSRCS))
  
 $(TARGET): $(OBJS) 
 	$(CC) $+ -o $@  $(LIBS)
-	cp $(TARGET) ../bin -rf
+	cp $(TARGET) ../bin/$(TARGET) -rf
 %.o:%.c
 	arm-oe-linux-gnueabi-gcc -march=armv7-a -mfloat-abi=softfp -mfpu=neon -c -g -DARM_EC20 $< -o $@ $(INCLUDE)
  
